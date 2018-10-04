@@ -1,4 +1,4 @@
-package com.projects.gillo;
+package com.projects.gillo.rb;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -6,7 +6,7 @@ import java.util.List;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 
-public class ApplicationMain {
+public class RBMain {
 
 	public static void main(String[] args) {
 		final ActorSystem system = ActorSystem.create("Reliable_Broadcast");

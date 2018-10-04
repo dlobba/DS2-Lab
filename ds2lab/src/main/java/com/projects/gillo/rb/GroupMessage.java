@@ -1,4 +1,4 @@
-package com.projects.gillo;
+package com.projects.gillo.rb;
 
 import java.io.Serializable;
 import java.util.ArrayList;

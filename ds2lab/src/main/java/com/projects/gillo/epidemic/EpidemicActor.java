@@ -4,16 +4,13 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import com.projects.gillo.rb.GroupMessage;
-import com.projects.gillo.rb.Message;
-import com.projects.gillo.rb.ReliableBroadcast;
-import com.projects.gillo.rb.ReliableBroadcast.SendBroadcast;
+import com.projects.gillo.epidemic.messages.EpidemicTimeoutMsg;
+import com.projects.gillo.epidemic.messages.InfectedMessage;
+import com.projects.gillo.epidemic.messages.StartMessage;
 
 import akka.actor.AbstractActor;
-import akka.actor.AbstractActor.Receive;
 import scala.concurrent.duration.Duration;
 import akka.actor.ActorRef;
-import akka.actor.Props;
 
 public abstract class EpidemicActor extends AbstractActor {
 	

@@ -1,13 +1,11 @@
 package com.projects.gillo.epidemic;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
-import com.projects.gillo.rb.GroupMessage;
-import com.projects.gillo.rb.ReliableBroadcast;
+import com.projects.gillo.epidemic.messages.InfectedMessage;
+import com.projects.gillo.epidemic.messages.StartMessage;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
@@ -20,18 +18,37 @@ public class EpidemicMain {
 		PUSHPULL
 	}
 	
-	private static EpiType epiType = EpiType.PUSH;
+	private static EpiType epiType = EpiType.PUSHPULL;
+	
+	private static Set<ActorRef> createActors(ActorSystem system,
+			EpiType type,
+			int num) {
+		Set<ActorRef> actors = new HashSet<ActorRef>();
+		for (int i = 0; i < num; i++) {
+			switch (type) {
+			case PULL:
+				actors.add(system.actorOf(EpidemicPullActor.props(i)
+						.withDispatcher("akka.actor.my-pinned-dispatcher"),
+						"actor" + i));
+				break;
+			case PUSHPULL:
+				actors.add(system.actorOf(EpidemicPushPullActor.props(i)
+						.withDispatcher("akka.actor.my-pinned-dispatcher"),
+						"actor" + i));
+				break;	
+			default:
+				actors.add(system.actorOf(EpidemicPushActor.props(i)
+						.withDispatcher("akka.actor.my-pinned-dispatcher"),
+						"actor" + i));
+				break;
+			}
+		}
+		return actors;
+	}
 	
 	public static void main(String[] args) {
 		ActorSystem system = ActorSystem.create("Epidemic");
-		
-		Set<ActorRef> actors = new HashSet<ActorRef>();
-		
-		for (int i = 0; i < 5; i++) {
-			actors.add(system.actorOf(EpidemicPushActor.props(i)
-					.withDispatcher("akka.actor.my-pinned-dispatcher"),
-					"actor" + i));
-		}
+		Set<ActorRef> actors = createActors(system, epiType, 5);
 		
 		StartMessage groupMsg = new StartMessage(actors);
 		for (ActorRef actor : actors) {
@@ -47,12 +64,12 @@ public class EpidemicMain {
 				ActorRef infected = (ActorRef) actors
 						.toArray()[new Random()
 						           .nextInt(actors.size())];
-				System.out.printf("Started infection\n");
-				infected.tell(new InfectedMessage(new Random().nextInt(Integer.MAX_VALUE)),
+				System.out.printf("Started infection %d\n", i);
+				infected.tell(new InfectedMessage(new Random()
+						.nextInt(Integer.MAX_VALUE)),
 						null);
 				Thread.sleep(5000);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}

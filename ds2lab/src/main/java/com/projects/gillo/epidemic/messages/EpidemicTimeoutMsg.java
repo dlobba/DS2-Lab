@@ -1,4 +1,4 @@
-package com.projects.gillo.epidemic;
+package com.projects.gillo.epidemic.messages;
 
 import java.io.Serializable;
 

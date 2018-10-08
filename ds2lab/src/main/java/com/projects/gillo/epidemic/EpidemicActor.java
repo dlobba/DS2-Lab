@@ -11,6 +11,7 @@ import com.projects.gillo.epidemic.messages.StartMessage;
 import akka.actor.AbstractActor;
 import scala.concurrent.duration.Duration;
 import akka.actor.ActorRef;
+import akka.actor.Props;
 
 public abstract class EpidemicActor extends AbstractActor {
 	
@@ -52,6 +53,6 @@ public abstract class EpidemicActor extends AbstractActor {
 
 	abstract void onEpidemicTimeout(EpidemicTimeoutMsg msg);
 	abstract void onEpidemicReceive(EpidemicMsg msg);
-
+	static Props props(int i) {return null;}
 	
 }

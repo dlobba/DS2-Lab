@@ -1,14 +1,16 @@
 package com.projects.gillo.epidemic;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 
-import com.projects.gillo.epidemic.messages.InfectedMessage;
-import com.projects.gillo.epidemic.messages.StartMessage;
+import com.projects.gillo.epidemic.messages.*;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.actor.Props;
 
 public class EpidemicMain {
 	
@@ -18,33 +20,42 @@ public class EpidemicMain {
 		PUSHPULL
 	}
 	
-	private static EpiType epiType = EpiType.PUSHPULL;
+	private static EpiType epiType = EpiType.PUSH;
 	
 	private static Set<ActorRef> createActors(ActorSystem system,
 			EpiType type,
 			int num) {
+		Class<?> actorType = null;
 		Set<ActorRef> actors = new HashSet<ActorRef>();
-		for (int i = 0; i < num; i++) {
 			switch (type) {
 			case PULL:
-				actors.add(system.actorOf(EpidemicPullActor.props(i)
-						.withDispatcher("akka.actor.my-pinned-dispatcher"),
-						"actor" + i));
+				actorType = EpidemicPullActor.class;
 				break;
 			case PUSHPULL:
-				actors.add(system.actorOf(EpidemicPushPullActor.props(i)
-						.withDispatcher("akka.actor.my-pinned-dispatcher"),
-						"actor" + i));
+				actorType = EpidemicPushPullActor.class;
 				break;	
 			default:
-				actors.add(system.actorOf(EpidemicPushActor.props(i)
-						.withDispatcher("akka.actor.my-pinned-dispatcher"),
-						"actor" + i));
+				actorType = EpidemicPushActor.class;
 				break;
+			}
+		Method m = null;
+		try {
+			m = actorType.getMethod("props", int.class);
+		} catch (NoSuchMethodException | SecurityException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		for (int i = 0; i < num; i++) {
+			try {
+				actors.add(system.actorOf(((Props) m.invoke(null, i)).withDispatcher("akka.actor.my-pinned-dispatcher"), "actor" + i));
+			} catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 		return actors;
 	}
+	
 	
 	public static void main(String[] args) {
 		ActorSystem system = ActorSystem.create("Epidemic");
@@ -73,6 +84,7 @@ public class EpidemicMain {
 				e.printStackTrace();
 			}
 		}
+		System.exit(0);
 	}
 
 }

@@ -7,19 +7,13 @@ public class Event implements Serializable {
 	protected int senderId;
 	private long age;
 	private int id;
-	private long bufferSize;
 	private String message;
 	
-	public Event(int id, long bufferSize, String message, int senderId) {
+	public Event(int id, String message, int senderId) {
 		this.id = id;
 		this.age = 0;
-		this.bufferSize = bufferSize;
 		this.message = new String(message);
 		this.senderId = senderId;
-	}
-
-	public long getBufferSize() {
-		return bufferSize;
 	}
 
 	public int getSenderId() {

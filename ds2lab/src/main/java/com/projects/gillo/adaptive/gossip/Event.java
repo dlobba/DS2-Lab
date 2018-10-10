@@ -8,12 +8,22 @@ public class Event implements Serializable {
 	private long age;
 	private int id;
 	private String message;
+	private boolean lost;
 	
 	public Event(int id, String message, int senderId) {
 		this.id = id;
 		this.age = 0;
 		this.message = new String(message);
 		this.senderId = senderId;
+		this.lost = false;
+	}
+
+	public boolean isLost() {
+		return lost;
+	}
+	
+	public void setLost() {
+		this.lost = true;
 	}
 
 	public int getSenderId() {

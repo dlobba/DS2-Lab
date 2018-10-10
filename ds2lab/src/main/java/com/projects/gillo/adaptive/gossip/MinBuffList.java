@@ -17,26 +17,28 @@ public class MinBuffList {
 	}
 
 	public void add(MinBuff minBuff) {
-		int index = 0;
-		boolean found = false;
-		MinBuff mbTemp = null;
-		while (index < this.minBuffs.size() && !found) {
-			mbTemp = this.minBuffs.get(index);
-			if (mbTemp.period >= minBuff.period)
-				found = true;
-			index += 1;
-		}
-		if (!found) {
-			this.minBuffs.add(minBuff);
-		} else {
-			if (mbTemp.period == minBuff.period) {
-				mbTemp.bufferSize = mbTemp.bufferSize < minBuff.bufferSize ?
-						mbTemp.bufferSize : minBuff.bufferSize;
+		synchronized (minBuffs) {
+			int index = 0;
+			boolean found = false;
+			MinBuff mbTemp = null;
+			while (index < this.minBuffs.size() && !found) {
+				mbTemp = this.minBuffs.get(index);
+				if (mbTemp.period >= minBuff.period)
+					found = true;
+				index += 1;
 			}
-			this.minBuffs.add(index - 1, minBuff);			
+			if (!found) {
+				this.minBuffs.add(minBuff);
+			} else {
+				if (mbTemp.period == minBuff.period) {
+					mbTemp.bufferSize = mbTemp.bufferSize < minBuff.bufferSize ?
+							mbTemp.bufferSize : minBuff.bufferSize;
+				}
+				this.minBuffs.add(index - 1, minBuff);			
+			}
+			if (this.minBuffs.size() > this.delta)
+				this.minBuffs.remove(0);
 		}
-		if (this.minBuffs.size() > this.delta)
-			this.minBuffs.remove(0);
 	}
 
 	/**
@@ -45,34 +47,38 @@ public class MinBuffList {
 	 * @return
 	 */
 	public int getMinBufferSize() {
-		Iterator<MinBuff> mbIter = this.minBuffs.iterator();
-		MinBuff mbTemp = mbIter.next();
-		long min;
-		if (mbTemp == null)
-			return -1;
-		int minIndex = 0;
-		int index = 0;
-		min = mbTemp.period;
-		while (mbIter.hasNext()) {
-			if (mbTemp.period < min) {
-				min = mbTemp.period;
-				minIndex = index;
+		synchronized (minBuffs) {			
+			Iterator<MinBuff> mbIter = this.minBuffs.iterator();
+			MinBuff mbTemp = mbIter.next();
+			long min;
+			if (mbTemp == null)
+				return -1;
+			int minIndex = 0;
+			int index = 0;
+			min = mbTemp.period;
+			while (mbIter.hasNext()) {
+				if (mbTemp.period < min) {
+					min = mbTemp.period;
+					minIndex = index;
+				}
+				index += 1;
+				mbTemp = mbIter.next();
 			}
-			index += 1;
-			mbTemp = mbIter.next();
+			return minIndex;
 		}
-		return minIndex;
 	}
 	
 	public MinBuff getMinBuff(long period) {
-		Iterator<MinBuff> mbIter = this.minBuffs.iterator();
-		MinBuff mbTemp;
-		while (mbIter.hasNext()) {
-			mbTemp = mbIter.next();
-			if (mbTemp.period == period)
-				return mbTemp;
+		synchronized (minBuffs) {
+			Iterator<MinBuff> mbIter = this.minBuffs.iterator();
+			MinBuff mbTemp;
+			while (mbIter.hasNext()) {
+				mbTemp = mbIter.next();
+				if (mbTemp.period == period)
+					return mbTemp;
+			}
+			return null;
 		}
-		return null;
 	}
 
 	@Override

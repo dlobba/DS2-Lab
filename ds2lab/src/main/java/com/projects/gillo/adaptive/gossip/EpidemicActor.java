@@ -138,16 +138,18 @@ public class EpidemicActor extends AbstractActor {
 		if (this.avgAge > H && avgTokens < TOKEN_MAX / 2 &&
 				new Random().nextDouble() > W)
 			this.tokenPeriod *= (1 + rH);
-		System.out.printf("%d P%d P%d Increased the token period\n",
+		System.out.printf("%d P%d P%d Increased the token period to %d\n",
 				System.currentTimeMillis(),
 				this.id,
-				this.id);
+				this.id,
+				this.tokenPeriod);
 		if (this.avgAge < L && avgTokens > TOKEN_MAX / 2) {
 			this.tokenPeriod *= (1 - rL);
-			System.out.printf("%d P%d P%d Decreased the token period\n",
+			System.out.printf("%d P%d P%d Decreased the token period to %d\n",
 					System.currentTimeMillis(),
 					this.id,
-					this.id);
+					this.id,
+					this.tokenPeriod);
 		}
 
 		sendGossipTimeoutMsg();
@@ -181,15 +183,25 @@ public class EpidemicActor extends AbstractActor {
 		List<Event> notLost;
 		int sizeNotLost;
 		Event oldest;
-		do {
+		/*do {
 			notLost = this.events.getEventsNotLost();
 			sizeNotLost = notLost.size();
 			oldest = this.events.getOldestEventNotLost();
 			this.avgAge = (long)(alpha * avgAge +
 					(1 - alpha) * oldest.getAge());
 			oldest.setLost();
-		}while (!(sizeNotLost > this.minBuff));
-
+		}while (!(sizeNotLost > this.minBuff));*/
+		notLost = this.events.getEventsNotLost();
+		sizeNotLost = notLost.size();
+		while (sizeNotLost > this.minBuff) {
+			oldest = this.events.getOldestEventNotLost();
+			this.avgAge = (long)(alpha * avgAge +
+					(1 - alpha) * oldest.getAge());
+			oldest.setLost();
+			notLost = this.events.getEventsNotLost();
+			sizeNotLost = notLost.size();
+		}
+		
 		while (this.events.size() > this.maxEvents) {
 			this.events.removeOld(maxAge); 
 		}
@@ -259,7 +271,7 @@ public class EpidemicActor extends AbstractActor {
 		.scheduleOnce(Duration.create(this.T,
 				TimeUnit.MILLISECONDS),
 				this.getSelf(),
-				new GossipTimeoutMsg(),
+				new TokenTimeoutMsg(),
 				getContext().system().dispatcher(),
 				this.getSelf());
 	}

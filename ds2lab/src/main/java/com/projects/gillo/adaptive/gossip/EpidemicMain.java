@@ -1,5 +1,7 @@
 package com.projects.gillo.adaptive.gossip;
 
+import java.io.FileNotFoundException;
+import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -18,19 +20,29 @@ public class EpidemicMain {
 	
 	
 	public static void main(String[] args) {
+		PrintStream file= null;
+		try {
+			file = new PrintStream("log.txt");
+			System.setOut(file);
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		ActorSystem system = ActorSystem.create("Epidemic");
 		List<ActorRef> actors = new ArrayList<>();
 		
 		for (int i = 0; i < nparticipants; i++) {
 			actors.add(system.actorOf(EpidemicActor
-					.props(i)
-					.withDispatcher("akka.actor.my-pinned-dispatcher"), "actor" + i));
+					.props(i).withDispatcher("akka.actor.my-pinned-dispatcher")
+					, "actor" + i));//.withDispatcher("akka.actor.my-pinned-dispatcher")
 		}
 		
-		StartMessage groupMsg = new StartMessage(actors);
 
-		system.actorOf(EventGenerator.props(actors, 1000).withDispatcher("akka.actor.my-pinned-dispatcher"),"PincopAllo");
-		
+		system.actorOf(EventGenerator
+				.props(actors, 1000).withDispatcher("akka.actor.my-pinned-dispatcher")
+				, "PincopAllo");
+
+		StartMessage groupMsg = new StartMessage(actors);
 		for (ActorRef actor : actors) {
 			actor.tell(groupMsg, null);
 		}

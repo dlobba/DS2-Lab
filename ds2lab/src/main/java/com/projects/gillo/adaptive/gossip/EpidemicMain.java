@@ -16,10 +16,10 @@ public class EpidemicMain {
 	
 	public static final int nparticipants = 5;
 	
+	
 	public static void main(String[] args) {
 		ActorSystem system = ActorSystem.create("Epidemic");
 		List<ActorRef> actors = new ArrayList<>();
-		
 		
 		for (int i = 0; i < nparticipants; i++) {
 			actors.add(system.actorOf(EpidemicActor
@@ -28,27 +28,13 @@ public class EpidemicMain {
 		}
 		
 		StartMessage groupMsg = new StartMessage(actors);
+
+		system.actorOf(EventGenerator.props(actors, 1000).withDispatcher("akka.actor.my-pinned-dispatcher"),"PincopAllo");
+		
 		for (ActorRef actor : actors) {
 			actor.tell(groupMsg, null);
 		}
 		
-		// generate a series of update, giving
-		// 5s to the system to get up to date.
-		// note: it can happen that within this interval
-		// some node could not be able to receive the update
-		for (int i = 0; i < 3; i++) {
-			try {
-				ActorRef infected = (ActorRef) actors
-						.toArray()[new Random()
-						           .nextInt(actors.size())];
-				System.out.printf("Started infection %d\n", i);
-				infected.tell(new BroadcastMsg(), null);
-				Thread.sleep(5000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-		System.exit(0);
 	}
 
 }

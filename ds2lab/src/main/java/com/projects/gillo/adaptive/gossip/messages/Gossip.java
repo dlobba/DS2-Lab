@@ -11,11 +11,14 @@ public class Gossip implements Serializable {
 	private List<Event> events;
 	private long bufferSize;
 	private long period;
-	
-	public Gossip(List<Event> events, long bufferSize, long period) {
+	private int senderId;
+
+
+	public Gossip(List<Event> events, long bufferSize, long period, int senderId) {
 		this.events = Collections.unmodifiableList(events);
 		this.bufferSize = bufferSize;
 		this.period = period;
+		this.senderId = senderId;
 	}
 
 	public List<Event> getEvents() {
@@ -29,5 +32,12 @@ public class Gossip implements Serializable {
 	public long getPeriod() {
 		return period;
 	}
+	
+	public int getSenderId() {
+		return senderId;
+	}
 
+	public void setSenderId(int senderId) {
+		this.senderId = senderId;
+	}
 }

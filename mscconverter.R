@@ -17,6 +17,7 @@ csv_converter <- function(source_f, target_f) {
       line <- header
     else
       line <- paste(header, paste(fields[4: length(fields)], collapse = " "))
+      print(line)
     writeLines(line, fh_write)
   }
   close(fh_read)
@@ -31,7 +32,7 @@ seq_message_converter <- function(logs, msc_file) {
 			paste(c("\"", x, "\""), collapse = "")})
   writeLines(paste(actors, collapse = ","),
              fh_write, sep = ";\n")
-  for (i in 2:nrow(logs)) {
+  for (i in 1:nrow(logs)) {
     log <- logs[i,]
     writeLines(sprintf("\"%s\"<=\"%s\" [label=\"%s\"];",
                        log[2], log[3], log[4]),

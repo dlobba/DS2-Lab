@@ -107,10 +107,10 @@ public class EpidemicActor extends AbstractActor {
 	}
 
 	void onGossipTimeout(GossipTimeoutMsg msg) {
-		System.out.printf("%d P%d P%d Received a GossipTimeout message\n",
-				System.currentTimeMillis(),
-				this.id,
-				this.id);
+//		System.out.printf("%d P%d P%d Received a GossipTimeout message\n",
+//				System.currentTimeMillis(),
+//				this.id,
+//				this.id);
 		//System.err.println("onGossipTimeout: " + this.events.size());
 		this.events.updateAge();
 		this.events.removeOld(maxAge);
@@ -120,6 +120,12 @@ public class EpidemicActor extends AbstractActor {
 				currentMinBuff.bufferSize,
 				this.period,
 				this.id);
+		System.out.printf("%d P%d P%d Broadcasted gossip P%d-%d\n",
+				System.currentTimeMillis(),
+				this.id,
+				this.id,
+				this.id,
+				this.period);
 
 		List<ActorRef> tmpActors = new ArrayList<>(this.actors);
 		for (int i = 0; i < numberInformed; i++) {
@@ -129,10 +135,6 @@ public class EpidemicActor extends AbstractActor {
 			// send gossip
 			tmp.tell(gossip, this.getSelf());
 		}
-		System.out.printf("%d P%d P%d Broadcasted a Gossip message\n",
-				System.currentTimeMillis(),
-				this.id,
-				this.id);
 
 		long avgTokens = this.tokensLog.stream().mapToLong(token -> token).sum() / this.tokensLog.size();
 		if (this.avgAge > H && avgTokens < TOKEN_MAX / 2 &&
@@ -156,10 +158,12 @@ public class EpidemicActor extends AbstractActor {
 	}
 
 	void onReceive(Gossip msg) {
-		System.out.printf("%d P%d P%d Received a gossip message\n",
+		System.out.printf("%d P%d P%d Received gossip P%d-%d\n",
 				System.currentTimeMillis(),
 				this.id,
-				msg.getSenderId());
+				msg.getSenderId(),
+				msg.getSenderId(),
+				msg.getPeriod());
 		//System.err.println("onReceive: " + this.events.size());
 		for (Event event : msg.getEvents()) {
 

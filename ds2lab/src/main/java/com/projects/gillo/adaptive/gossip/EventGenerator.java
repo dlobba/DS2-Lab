@@ -37,7 +37,7 @@ public class EventGenerator extends AbstractActor{
 	public void onGenerateMsg(GenerateMsg msg) {
 		int chosen = new Random().nextInt(actors.size());
 		ActorRef infected = (ActorRef) actors.toArray()[chosen];
-		System.out.printf("%d p%d PA Started infection\n", System.currentTimeMillis(), chosen);
+		System.out.printf("%d P%d PA Started infection\n", System.currentTimeMillis(), chosen);
 		infected.tell(new BroadcastMsg(), null);
 		if(new Random().nextInt() == 42) {
 			System.exit(0);

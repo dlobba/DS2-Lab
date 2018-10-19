@@ -17,14 +17,13 @@ csv_converter <- function(source_f, target_f) {
       line <- header
     else
       line <- paste(header, paste(fields[4: length(fields)], collapse = " "))
-      print(line)
     writeLines(line, fh_write)
   }
   close(fh_read)
   close(fh_write)
 }
 
-seq_message_converter <- function(logs, msc_file) {
+seq_message_converter <- function(logs, msc_file, time_divider) {
   fh_write <- file(msc_file, "w")
   writeLines("msc {", fh_write)
   actors <- unique(sort(c (logs$V2, logs$V3)))
@@ -32,11 +31,20 @@ seq_message_converter <- function(logs, msc_file) {
 			paste(c("\"", x, "\""), collapse = "")})
   writeLines(paste(actors, collapse = ","),
              fh_write, sep = ";\n")
+  ts <- as.numeric(logs[1,1])
+  j <- 1
   for (i in 1:nrow(logs)) {
     log <- logs[i,]
+    tsnew <- as.numeric(log[1])
     writeLines(sprintf("\"%s\"<=\"%s\" [label=\"%s\"];",
                        log[2], log[3], log[4]),
                fh_write)
+    if ((tsnew - ts) > time_divider) {
+      writeLines(sprintf("--- [ label = \"TIME: %s\" ];", time_divider * j),
+		 fh_write)
+      j <- j + 1
+      ts <- tsnew
+    }
   }
   writeLines("}", fh_write)
   close(fh_write)
@@ -53,6 +61,6 @@ if (length(args) > 1) {
                   stringsAsFactors = F)
   index = with(data, order(V1))
   data <- data[index,]
-  seq_message_converter(data, msc_file)
+  seq_message_converter(data, msc_file, 1000)
 } else
   print("Insufficient number of arguments")

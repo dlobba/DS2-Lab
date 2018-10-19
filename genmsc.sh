@@ -1,5 +1,4 @@
 #!/bin/bash
-
 log_file="./run.log"
 temp_file="./temp_.csv"
 msc_file="./msc.txt"

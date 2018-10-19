@@ -38,7 +38,7 @@ public class EpidemicActor extends AbstractActor {
 
 	private EventsList events;
 	private int eventIdGen;
-	private static final int UPPER_MAX_EVENTS = 10;
+	private static final int UPPER_MAX_EVENTS = 50;
 	private final int maxEvents; // this is |events|_m in the paper
 
 	final long delta = 3; // periods window (in periods)
@@ -138,13 +138,14 @@ public class EpidemicActor extends AbstractActor {
 
 		long avgTokens = this.tokensLog.stream().mapToLong(token -> token).sum() / this.tokensLog.size();
 		if (this.avgAge > H && avgTokens < TOKEN_MAX / 2 &&
-				new Random().nextDouble() > W)
+				new Random().nextDouble() > W) {
 			this.tokenPeriod *= (1 + rH);
-		System.out.printf("%d P%d P%d Increased the token period to %d\n",
-				System.currentTimeMillis(),
-				this.id,
-				this.id,
-				this.tokenPeriod);
+			System.out.printf("%d P%d P%d Increased the token period to %d\n",
+					System.currentTimeMillis(),
+					this.id,
+					this.id,
+					this.tokenPeriod);
+		}
 		if (this.avgAge < L && avgTokens > TOKEN_MAX / 2) {
 			this.tokenPeriod *= (1 - rL);
 			System.out.printf("%d P%d P%d Decreased the token period to %d\n",
@@ -205,7 +206,7 @@ public class EpidemicActor extends AbstractActor {
 			notLost = this.events.getEventsNotLost();
 			sizeNotLost = notLost.size();
 		}
-		
+
 		while (this.events.size() > this.maxEvents) {
 			this.events.removeOld(maxAge); 
 		}
@@ -263,7 +264,7 @@ public class EpidemicActor extends AbstractActor {
 		.scheduleOnce(Duration.create(this.tokenPeriod,
 				TimeUnit.MILLISECONDS),
 				this.getSelf(),
-				new GossipTimeoutMsg(),
+				new TokenTimeoutMsg(),
 				getContext().system().dispatcher(),
 				this.getSelf());
 	}
@@ -275,7 +276,7 @@ public class EpidemicActor extends AbstractActor {
 		.scheduleOnce(Duration.create(this.T,
 				TimeUnit.MILLISECONDS),
 				this.getSelf(),
-				new TokenTimeoutMsg(),
+				new GossipTimeoutMsg(),
 				getContext().system().dispatcher(),
 				this.getSelf());
 	}

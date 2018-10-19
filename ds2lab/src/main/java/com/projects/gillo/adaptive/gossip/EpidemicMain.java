@@ -22,7 +22,7 @@ public class EpidemicMain {
 	public static void main(String[] args) {
 		PrintStream file= null;
 		try {
-			file = new PrintStream("log.txt");
+			file = new PrintStream("./../log.txt");
 			System.setOut(file);
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block

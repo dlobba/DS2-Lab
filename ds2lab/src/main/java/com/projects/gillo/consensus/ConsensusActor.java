@@ -76,7 +76,7 @@ public class ConsensusActor extends AbstractActor {
 	private void onProposeMsg(ProposeMsg msg) {
 		if (crashed)
 			return;
-		this.round = -1;
+		this.round = 0;
 		this.estimate = new Random().nextInt(Integer.MAX_VALUE);
 		this.stop = false;
 		this.decided = false;
@@ -94,7 +94,6 @@ public class ConsensusActor extends AbstractActor {
 			return;
 		if (stop)
 			return;
-		this.round += 1;
 		System.out.printf("%d p%d p%d Starting round %d\n",
 				System.currentTimeMillis(),
 				this.id,
@@ -116,6 +115,7 @@ public class ConsensusActor extends AbstractActor {
 				return;
 			}
 			BBroadcast(msg);
+			
 		}
 		this.phase1Waiting = true;
 		System.out.println(this.msgBuffer.toString());
@@ -153,6 +153,7 @@ public class ConsensusActor extends AbstractActor {
 		} else {
 			this.replyingProcesses = new HashSet<>();
 			this.receivedValues = new HashSet<>();
+			this.round += 1;
 			onStartRound();
 		}
 	}
@@ -164,17 +165,18 @@ public class ConsensusActor extends AbstractActor {
 			this.crashed = true;
 			this.isProcessDead();
 		}
-		if (this.round > msg.getRound()) {
+		if (this.round != msg.getRound()) {
 			this.msgBuffer.add(msg);
 			return;
 		}
 		if (this.coordinatorId != msg.getSenderId())
 			return;
-		System.out.printf("%d p%d p%d Received coordinator estimate = %s\n",
+		System.out.printf("%d p%d p%d Received coordinator round %d estimate = %s\n",
 				System.currentTimeMillis(),
 				this.id,
 				msg.getSenderId(),
-				this.estimate.toString());
+				msg.getRound(),
+				msg.getEstimate().toString());
 		Object aux = msg.getEstimate();
 		this.phase1Waiting = false;
 		onPhase1End(aux);

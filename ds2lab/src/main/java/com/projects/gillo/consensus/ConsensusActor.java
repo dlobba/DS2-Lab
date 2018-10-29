@@ -1,10 +1,8 @@
 package com.projects.gillo.consensus;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -25,6 +23,7 @@ public class ConsensusActor extends AbstractActor {
 	}
 
 	public static class TickMessage implements Serializable {};
+	public static class NextRoundMsg implements Serializable {};
 	
 	//private static final int PHASE1_TIMER = 5000;
 	//private static final int PHASE2_TIMER = 5000;
@@ -49,15 +48,15 @@ public class ConsensusActor extends AbstractActor {
 	private FailureDetector globalFd;
 	private GlobalClock clock;
 	
-	private List<Object> msgBuffer;
+	private Set<ActorRef> receivedNextRound;
 	
 	public ConsensusActor(int id, GlobalClock clock, CrashFailure crashFailure) {
 		this.id = id;
 		this.clock = clock;
 		this.crashed = false;
 		this.phase1Waiting = false;
-		this.msgBuffer = new ArrayList<>();
 		this.crashFailure = crashFailure;
+		this.receivedNextRound = null;
 	}
 	
 	static Props props(int id, GlobalClock clock, CrashFailure crashFailure) {
@@ -118,10 +117,6 @@ public class ConsensusActor extends AbstractActor {
 			
 		}
 		this.phase1Waiting = true;
-		System.out.println(this.msgBuffer.toString());
-		for (Object msg : msgBuffer) {
-			this.getSelf().tell(msg, null);
-		}
 	}
 	
 	private void onPhase1End(Object aux) {
@@ -151,11 +146,21 @@ public class ConsensusActor extends AbstractActor {
 			DecideMsg msg = new DecideMsg(this.estimate, this.id);
 			BBroadcast(msg);
 		} else {
+			this.receivedNextRound = new HashSet<>();
+			BBroadcast(new NextRoundMsg());
 			this.replyingProcesses = new HashSet<>();
 			this.receivedValues = new HashSet<>();
 			this.round += 1;
-			onStartRound();
+			// wait when it is safe to go to the next round
 		}
+	}
+	
+	private void onNextRoundMsg(NextRoundMsg msg) {
+		if (this.receivedNextRound == null)
+			return;
+			// blocked receipt of this message
+		if (!this.receivedNextRound.contains(this.getSender()))
+			this.receivedNextRound.add(this.getSender());
 	}
 	
 	private void onPhase1Msg(Phase1Msg msg) {
@@ -165,10 +170,8 @@ public class ConsensusActor extends AbstractActor {
 			this.crashed = true;
 			this.isProcessDead();
 		}
-		if (this.round != msg.getRound()) {
-			this.msgBuffer.add(msg);
+		if (this.round != msg.getRound())
 			return;
-		}
 		if (this.coordinatorId != msg.getSenderId())
 			return;
 		System.out.printf("%d p%d p%d Received coordinator round %d estimate = %s\n",
@@ -190,16 +193,14 @@ public class ConsensusActor extends AbstractActor {
 			this.crashed = true;
 			this.isProcessDead();
 		}
-		if (this.round > msg.getRound()) {
-			this.msgBuffer.add(msg);
+		if (this.round > msg.getRound())
 			return;
-		}
 		this.receivedValues.add(msg.getEstimate());
 		this.replyingProcesses.add(this.getSender());
 		if (this.replyingProcesses.size() > this.participants.size() / 2)
 			onPhase2End();
 	}
-	
+
 	private void onDecideMsg(DecideMsg msg) {
 		if (crashed)
 			return;
@@ -220,7 +221,7 @@ public class ConsensusActor extends AbstractActor {
 			participant.tell(msg, this.getSelf());
 		}
 	}
-	
+
 	private boolean isProcessDead() {
 		if (this.crashed)
 			return true;
@@ -242,6 +243,11 @@ public class ConsensusActor extends AbstractActor {
 		long currentTick = clock.getCurrentTick();
 		this.suspects = this.processFd
 				.getSuspectsAt(currentTick);
+		if (this.suspects.size() > this.participants.size() / 2) {
+			System.out.printf("p%d: Too few processes survived, consensus not achievable.\n",
+					this.id);
+			return;
+		}
 		if (this.isProcessDead()) {
 			this.crashed = true;
 			return;
@@ -253,6 +259,21 @@ public class ConsensusActor extends AbstractActor {
 					this.id);
 			this.phase1Waiting = false;
 			this.onPhase1End(new QUESTION());
+		}
+		// if I'm waiting for NextRoundMsg
+		if (this.receivedNextRound != null) {
+			Set<ActorRef> suspects = new HashSet<>();
+			for (Integer suspectid : this.suspects) {
+				suspects.add(this.participants.get(suspectid));
+			}
+			Set<ActorRef> tmpParticipants = new HashSet<ActorRef>(this.participants.values());
+			tmpParticipants.removeAll(suspects);
+			// if all processes not crashed have sent the message
+			// to go to the next round, then go to the next round
+			if (tmpParticipants.containsAll(receivedNextRound)) {
+				this.receivedNextRound = null;
+				onStartRound();
+			}
 		}
 		sendTickMessageTimeout();
 	}
@@ -268,7 +289,7 @@ public class ConsensusActor extends AbstractActor {
 				getContext().system().dispatcher(),
 				this.getSelf());
 	}
-
+	
 	@Override
 	public Receive createReceive() {
 		return receiveBuilder()
@@ -278,9 +299,7 @@ public class ConsensusActor extends AbstractActor {
 				.match(Phase2Msg.class, this::onPhase2Msg)
 				.match(DecideMsg.class, this::onDecideMsg)
 				.match(TickMessage.class, this::onTickMessage)
+				.match(NextRoundMsg.class, this::onNextRoundMsg)
 				.build();
 	}
-	
-	
-
 }

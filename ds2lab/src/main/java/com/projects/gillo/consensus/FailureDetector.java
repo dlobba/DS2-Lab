@@ -5,6 +5,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import akka.actor.ActorRef;
+
 public class FailureDetector {
 	// map each process to the tick it is going
 	// to crash in
